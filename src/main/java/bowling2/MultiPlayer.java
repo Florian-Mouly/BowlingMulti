@@ -3,52 +3,77 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
+package bowling2;
 import bowling.MultiPlayerGame;
 import bowling.SinglePlayerGame;
-import java.util.ArrayList;
-import java.util.Arrays;
+
 /**
  *
- * @author pedago
+ * @author florian mouly
  */
 public class MultiPlayer implements MultiPlayerGame {
 
-    SinglePlayerGame games[];
-    ArrayList<String> playerNames;
-    int joueurCourant;
-    
-    public MultiPlayer(String[] playerName) throws Exception {
-        startNewGame(playerName);
-    }
+    public SinglePlayerGame[] games;
+    public String[] players;
+    public int turn;
+    public int currentPlayer;
+
+    @Override
     public String startNewGame(String[] playerName) throws Exception {
-        joueurCourant=0;
-        games = new SinglePlayerGame[playerName.length];
-        
-        for(int i = 0 ; i < games.length ; i++) {
-            games[i] = new SinglePlayerGame();
+        if (playerName == null || playerName.length == 0){
+            throw new UnsupportedOperationException("Erreur liste joueur vide/nulle");
         }
-        
-        playerNames = new ArrayList<>(Arrays.asList(playerName)); // On copie les noms dans une ArrayList pour faciliter la recherche du score d'un joueur avec la m�thode indexOf()
-        
-        return getNomJoueurCourant();
+        this.players = playerName;
+        this.games = new SinglePlayerGame[playerName.length];
+        for (int i=0;i<this.games.length;i++){
+            this.games[i] = new SinglePlayerGame();
+        }
+        this.turn = 0;
+        this.currentPlayer = 0;
+        return "Prochain tir : joueur "+this.players[0]+", tour n° 1, boule n° 1";
     }
     
-
-    public String lancer(int nombreDeQuillesAbattues) throws Exception {
-        games[joueurCourant].lancer(nombreDeQuillesAbattues);
-        joueurCourant = (joueurCourant+1) % games.length;
-        
-        return getNomJoueurCourant();
+    public void nextTurn(){
+        if (currentPlayer == this.players.length-1){
+                this.currentPlayer = 0;
+                this.turn++;
+        }else{
+                this.currentPlayer++;
+        }
     }
 
-    public int scoreFor(String playerName) throws Exception {
-        if(playerNames.contains(playerName)){
-            int indiceJoueur = playerNames.indexOf(playerName);
-
-            return games[indiceJoueur].score();
-        } else {
-            throw new Exception("Le joueur " + playerName + " ne joue pas.");
+    @Override
+    public String lancer(int nombreDeQuillesAbattues) throws Exception {
+        if (this.games == null){
+            throw new UnsupportedOperationException("Partie non lancée");
         }
+        if (this.games[this.games.length-1].isFinished() == false){
+            this.games[currentPlayer].lancer(nombreDeQuillesAbattues);
+            if (this.games[this.currentPlayer].isFinished() || this.games[currentPlayer].hasCompletedFrame()){
+                nextTurn();
+            }
+            if (this.games[this.games.length-1].isFinished()){
+                return "Partie terminée.";
+            } else {
+                return "Prochain tir : joueur "+this.players[currentPlayer]+", tour n° "+(this.turn+1)+", boule n° "+this.games[currentPlayer].getNextBallNumber();   
+            }
+        } else {
+            return "Partie terminée.";
+        }
+    }
+
+    @Override
+    public int scoreFor(String playerName) throws Exception {
+        int cpt = -1;
+        for (int i=0;i<this.players.length;i++){
+            if (this.players[i].equals(playerName)){
+               cpt = this.games[i].score();
+            }
+        }
+        if (cpt == -1){
+            throw new UnsupportedOperationException("Error, not here");
+        }
+        return cpt; 
     }
     
 }
